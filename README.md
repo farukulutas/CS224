@@ -1,4 +1,4 @@
-# CS224
+# CS224 :man_technologist:
 All my work in CS 224 - Digital Design course.
 
 ## Lab Contents:
