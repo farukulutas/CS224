@@ -1,0 +1,477 @@
+##
+## Program1.asm - prints out "hello world"
+##
+##	a0 - points to the string
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start 
+
+__start:		# execution starts here
+	la $a0,str	# put string address into a0
+	li $v0,4	# system call to print
+	syscall		#   out a string
+
+	li $v0,10  # system call to exit
+	syscall	#    bye bye
+
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+str:	.asciiz "Hello Cagri\n"
+n:	.word	10
+
+##
+## end of file Program1.asm
+
+
+-------------------------------------------------------------------------------------------
+
+##
+## Program2.asm asks user for temperature in Celsius,
+##  converts to Fahrenheit, prints the result.
+##
+##	v0 - reads in Celsius
+##	t0 - holds Fahrenheit result
+##	a0 - points to output strings
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start	
+
+__start:
+	la $a0,prompt	# output prompt message on terminal
+	li $v0,4	# syscall 4 prints the string
+	syscall
+
+	li $v0, 5	# syscall 5 reads an integer
+	syscall
+
+	addi $t0, $v0, 0
+	mul $t0,$t0,9	# to convert,multiply by 9,
+	div $t0,$t0,5	# divide by 5, then
+	add $t0,$t0,32	# add 32
+
+	la $a0,ans1	# print string before result
+	li $v0,4
+	syscall
+
+	move $a0,$t0	# print integer result
+	li $v0,1		# using syscall 1
+	syscall
+
+	la $a0,endl	# system call to print
+	li $v0,4		# out a newline
+	syscall
+
+	li $v0,10		# system call to exit
+	syscall		#    bye bye
+
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+prompt:	.asciiz "Enter temperature (Celsius): "
+ans1:	.asciiz "The temperature in Fahrenheit is "
+endl:	.asciiz "\n"
+
+##
+## end of file Program2.asm
+
+-------------------------------------------------------------------------------------------
+
+##
+##	Program3.asm is a loop implementation
+##	of the Fibonacci function
+##        
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+.globl __start
+ 
+__start:		# execution starts here
+	li $a0,3	# to calculate fib(7)
+	jal fib		# call fib
+	move $a0,$t0	# print result
+	li $v0, 1
+	syscall
+
+	la $a0, endl	# print newline
+	li $v0,4
+	syscall
+
+	li $v0, 10
+	syscall		# bye bye
+
+#------------------------------------------------
+
+
+fib:	move $v0, $a0	# initialise last element
+	beq $a0, 1, oneCase
+	blt $a0, 2, done	# fib(0)=0, fib(1)=1
+
+	li $t0,0	# second last element
+	li $v0,1	# last element
+
+loop:	add $t1,$t0,$v0	# get next value
+	move $t0,$v0	# update second last
+	move $v0,$t1	# update last element
+	sub $a0,$a0,1	# decrement count
+	bgt $a0,0,loop	# exit loop when count=0
+done:	jr $ra
+oneCase:li $t0, 1
+	jr $ra
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+endl:	.asciiz "\n"
+
+##
+## end of Program3.asm
+
+---------------------------------------------------
+
+.data
+qs: .asciiz "Try your program with the following expression x = (a * b) / (a + b)"
+aMsg: .asciiz "\nPlease enter value A:"
+bMsg: .asciiz "\nPlease enter value B:"
+xMsg: .asciiz "\nValue of X is "
+A: .word  0 # int size(4 bytes)
+B: .word  0 # int size(4 bytes)
+X: .word  0 # int size(4 bytes)
+
+.globl start
+.text
+start:
+	# prompt the program task on screen
+	li $v0, 4
+	la $a0, qs
+	syscall
+	
+	# Ask prompt A
+	li $v0, 4
+	la $a0, aMsg
+	syscall
+	
+	# read the user input
+	li $v0, 5
+	syscall
+	sw $v0, A
+	
+	# Ask prompt B
+	li $v0, 4
+	la $a0, bMsg
+	syscall
+	
+	# read the user input
+	li $v0, 5
+	syscall
+	sw $v0, B
+	
+	jal calculate
+	
+	# print aMsg
+	li $v0, 4
+	la $a0, xMsg
+	syscall
+	
+	# print X
+	li $v0, 1
+	lw $a0, X
+	syscall
+	
+	# exit the program
+	li $v0, 10	
+	syscall
+
+# Calculates value A according to formula, returns value in v0 register
+calculate:
+	lw $t0, A
+	lw $t1, B
+	lw $t2, X
+	
+	# formula: x = (a * b) / (a + b)
+	#mul $t3, $t0, $t1 # t3 contains (a*b)
+	#add $t4, $t0, $t1 # t4 contains (a+b)
+	#div $t2, $t3, $t4 # t2 contains (a * b) / (a + b)
+	#sw $v0, X
+
+	# formula (a*b)/c ))% 2
+	#mul $t4, $t0, $t1 #t4 contains ( a*b)
+	#div $t5, $t4, $t3 #t5 contains (a*b)/c
+	
+	#loop:
+		#blt $t5, $t3, done
+		#sub $t5, $t5, $t3
+		#j loop
+		
+	#done:
+	
+	# formula ( a % b ) * ( a - b )
+	rem $t3, $t0, $t1 #t4 contians ( a % b )
+	sub $t4, $t0, $t1 #t5 a-b
+	mul $t2, $t3, $t4
+	
+	sw $t2, X 
+
+	jr $ra
+
+--------------------------------------------------------
+
+.data
+	array: .space 400
+	size: .word 0
+	sum: .word 0
+	sumEven: .word 0
+	sumOdd: .word 0
+	occurrenceDiv: .word 0
+	input: .word 0
+	promptSize: .asciiz "Please enter the size:"
+	promptValues: .asciiz "Please enter the values\n"
+	promptMenu: .asciiz "\n---MENU---\na. Sum of numbers in the array => (n>a)\nb. Sum of even, odd\nc. Number of occurences div by a input\nd. Quit\nEnter an option (a,b,c,d)\n"
+	promptInput: .asciiz "\nPlease enter the input value:"
+	promptWarning: .asciiz "\nPlease enter a valid input"
+	promptResult: .asciiz "\nResult is "
+	promptResultOdd: .asciiz "\nThe summation of odd numbers: "
+	promptResultEven: .asciiz "\nThe summation of even numbers: "
+	promptResultDiv: .asciiz "\nThe summation of divisible numbers to input: "
+
+.globl start
+.text
+
+start:
+	# size ask prompt
+	li $v0, 4
+	la $a0, promptSize
+	syscall
+	
+	# get size value
+	li $v0, 5
+	syscall
+	sw $v0, size
+	
+	jal createArray
+	
+	menu:
+		li $v0, 4
+		la $a0, promptMenu
+		syscall
+
+		# load character options into the registers
+		li $t0, 'a'
+		li $t1, 'b'
+		li $t2, 'c'
+		li $t3, 'd'
+		
+		li $v0, 12 # char read
+		syscall
+		
+		# call the option
+		beq $v0, $t0, callA
+		beq $v0, $t1, callB
+		beq $v0, $t2, callC
+		beq $v0, $t3, quit
+		
+		# invalid input warning
+		li $v0, 4
+		la $a0, promptWarning
+		syscall
+		j menu
+		
+		callA:
+			li $v0, 4
+			la $a0, promptInput
+			syscall
+			li $v0, 5
+			syscall
+			sw $v0, input
+			jal sumGreaterThanInput
+			j menu
+		callB:
+			jal sumOfEvenOdd
+			j menu
+		callC:
+			li $v0, 4
+			la $a0, promptInput
+			syscall
+			li $v0, 5
+			syscall
+			sw $v0, input
+			jal noOccurrencesDivByInput
+			j menu
+		
+	quit:
+	
+	# exit the program
+	li $v0, 10	
+	syscall
+	
+createArray:
+	lw $t0, size # $t0 = size
+	la $t1, array # $t1 = base addr of array
+	add $t2, $0, $0 # index = 0
+	
+	# ask prompt for values
+	li $v0, 4
+	la $a0, promptValues
+	syscall
+	
+	getInput:
+		li $v0, 5
+		syscall
+		
+		sw $v0, 0($t1) # $t1 = new element
+		addi $t1, $t1, 4 # byte update +4
+		addi $t2, $t2, 1
+		blt $t2, $t0, getInput
+	jr $ra
+	
+sumGreaterThanInput:
+	sw $0, sum # sum = 0
+	addi $s1, $0, 0 # i = 0
+	la $s0, array
+	lw $t2, size
+	lw $t3, input
+	
+	loop:
+		slt $t0, $s1, $t2
+		beq $t0, $0, done
+		sll $t0, $s1, 2
+		add $t0, $t0, $s0
+		lw $t1, 0($t0)
+		bgt $t1, $t3, summation
+		addi $s1, $s1, 1
+		j loop
+		
+	summation:
+		lw $t4, sum
+		add $t4, $t4, $t1
+		sw $t4, sum
+		addi $s1, $s1, 1
+		j loop	
+		
+	done:
+		la $a0, promptResult
+		li $v0, 4
+		syscall
+		li $v0, 1
+		lw $a0, sum
+		syscall
+	
+	jr $ra
+
+sumOfEvenOdd:
+	sw $0, sumEven # sumEven = 0
+	sw $0, sumOdd # sumOdd = 0
+	addi $s1, $0, 0 # i = 0
+	la $s0, array
+	lw $t2, size
+	
+	loopEvenOdd:
+		slt $t0, $s1, $t2
+		beq $t0, $0, doneEvenOdd
+		sll $t0, $s1, 2
+		add $t0, $t0, $s0
+		lw $t1, 0($t0)
+		rem $t5, $t1, 2
+		beq $t5, 0, summationEven
+		j summationOdd
+		addi $s1, $s1, 1
+		j loopEvenOdd
+		
+	summationEven:
+		lw $t4, sumEven
+		add $t4, $t4, $t1
+		sw $t4, sumEven
+		addi $s1, $s1, 1
+		j loopEvenOdd
+			
+	summationOdd:
+		lw $t4, sumOdd
+		add $t4, $t4, $t1
+		sw $t4, sumOdd
+		addi $s1, $s1, 1
+		j loopEvenOdd
+		
+	doneEvenOdd:
+		la $a0, promptResultEven
+		li $v0, 4
+		syscall
+		li $v0, 1
+		lw $a0, sumEven
+		syscall
+		
+		la $a0, promptResultOdd
+		li $v0, 4
+		syscall
+		li $v0, 1
+		lw $a0, sumOdd
+		syscall
+	
+	jr $ra
+
+noOccurrencesDivByInput:
+	sw $0, occurrenceDiv # sumEven = 0
+	addi $s1, $0, 0 # i = 0
+	la $s0, array
+	lw $t2, size
+	lw $t3, input
+	
+	loopDiv:
+		slt $t0, $s1, $t2
+		beq $t0, $0, doneDiv
+		sll $t0, $s1, 2
+		add $t0, $t0, $s0
+		lw $t1, 0($t0)
+		rem $t5, $t1, $t3
+		beq $t5, 0, summationDiv
+		addi $s1, $s1, 1
+		j loopDiv
+		
+	summationDiv:
+		lw $t4, occurrenceDiv
+		addi $t4, $t4, 1
+		sw $t4, occurrenceDiv
+		addi $s1, $s1, 1
+		j loopDiv
+
+	doneDiv:
+		la $a0, promptResultDiv
+		li $v0, 4
+		syscall
+		li $v0, 1
+		lw $a0, occurrenceDiv
+		syscall
+	
+	jr $ra

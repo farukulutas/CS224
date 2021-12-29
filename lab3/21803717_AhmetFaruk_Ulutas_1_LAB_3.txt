@@ -1,0 +1,468 @@
+.data
+mainInstrCount: .asciiz "Main's instruction counts for R-type and I-tpye are:\n"
+functInstrCount: .asciiz "\nSubprogram's instruction counts for R-type and I-type are:\n"
+countI: .asciiz "Number of I-type instructions is: "
+countR: .asciiz "\nNumber of R-type instructions is: "
+
+.text
+.globl main
+	
+main:
+	# Load addresses of the first and last instructions of main
+	la $a0, main
+	la $a1, mainEnd
+	
+	# Perform the function for the main
+	jal countRI
+
+	# Store I and R counts in t registers
+	add $t0, $a0, $0 
+	add $t1, $a1, $0 
+	
+	#add $t7, $t1, $t2
+	addi $t7, $t1, 5
+	
+	# Display message for main instructions counts
+	la $a0, mainInstrCount
+	li $v0, 4
+	syscall
+	
+	# Display addi count for main
+	la $a0, countI
+	li $v0, 4
+	syscall
+	move $a0, $t0
+	li $v0, 1
+	syscall
+	
+	# Display add count for main
+	la $a0, countR
+	li $v0, 4
+	syscall
+	move $a0, $t1
+	li $v0, 1
+	syscall
+	
+	# Load addresses of the first and last instructions of the countRI function
+	la $a0, countRI
+	la $a1, functionEnd
+	
+	# Perform the function for the countRI function
+	jal countRI 
+	
+	# Store add and lw counts in t registers
+	add $t0, $a0, $0
+	add $t1, $a1, $0 
+	
+	# Display message for countRI function instructions counts
+	la $a0, functInstrCount
+	li $v0, 4
+	syscall
+	
+	# Display lw count for countRI function
+	la $a0, countI
+	li $v0, 4
+	syscall
+	move $a0, $t0
+	li $v0, 1
+	syscall
+	
+	# Display lw count for countRI function
+	la $a0, countR
+	li $v0, 4
+	syscall
+	move $a0, $t1
+	li $v0, 1
+	syscall
+	
+	# Exits the program
+	li $v0, 10
+	syscall
+mainEnd:
+
+countRI:	
+	# Allocate the stack space
+	addi $sp, $sp, -32 
+	sw $s0, 28($sp) 
+	sw $s1, 24($sp) 
+	sw $s2, 20($sp) 
+	sw $s3, 16($sp) 
+	sw $s4, 12($sp) 
+	sw $s5, 8($sp) 
+	sw $s6, 4($sp)
+	sw $s7, 0($sp) 
+	
+	# Load first and last instructions to s registers using add
+	add $s2, $s2, $a0 
+	add $s3, $s3, $a1 
+	
+	# Load 0 to counters using add
+	add $s5, $s5, $0 
+	add $s6, $s6, $0 
+	add $s7, $s7, $0 
+	
+	
+loop:
+	# Function is completed if the first address is greater than the last address
+	sgt $s5, $s2, $s3
+	bne $s5, $0, done
+	
+	# Load the value of the address to another register and go to the next address
+	lw $s0, ($s2)
+	li $s5, 4
+	add $s2, $s2, $s5
+	
+	# Load R-Type's opcode to $s5 (add)
+	li $s5, 0
+
+	# Compare the current adressess' opcode with add's opcode
+	srl $s1, $s0, 26
+	sne $s5, $s1, $0 
+	beq $s5, $0, incrementR 
+	
+	# Load I-Type's opcode to $s5 (addi)
+	li $s5, 2
+	
+	# Compare the current adressess' opcode with lw's opcode, increment lw counter if equal
+	srl $s1, $s0, 26 
+	sne $s4, $s1, $s5
+	
+	addi $s5, $s5, 1
+	sne  $s1, $s1, $s5
+	  
+	and $s1, $s1, $s4
+	beq $s1, 1, incrementI
+	
+	j loop
+	
+incrementI:
+	# Increment lw counter
+	addi $s6, $s6, 1
+	j loop 
+	
+incrementR:
+	# Increment add counter
+	addi $s7, $s7, 1
+	j loop 
+done:
+	# Move the results back to a registers
+	move $a0, $s6
+	move $a1, $s7 
+	
+	# Deallocate the stack space
+	lw $s7, 0($sp) 
+	lw $s6, 4($sp) 
+	lw $s5, 8($sp)
+	lw $s4, 12($sp) 
+	lw $s3, 16($sp) 
+	lw $s2, 20($sp) 
+	lw $s1, 24($sp)
+	lw $s0, 28($sp) 
+	addi $sp, $sp, 32 
+	
+	# Return to main
+	jr $ra 
+functionEnd:
+
+
+.data
+promptInput: .asciiz "\nPlease enter positive values for divident and divisor:\n"
+promptOutput: .asciiz "The answer is: "
+
+.text
+.globl main
+
+main:
+	# Display input message
+	li $v0, 4
+	la $a0, promptInput
+	syscall
+	
+	# Get the divident from the user and put it in a0
+	li $v0, 5
+	syscall
+	add $a0, $v0, 0
+	
+	# Get the divisor from the user and put it in a1
+	li $v0, 5
+	syscall
+	add $a1, $v0, 0
+	
+	beq $a0, 0, exit
+	beq $a1, 0, exit
+	
+	# Perform the division subprogram
+	jal division
+	
+exit:
+	#end program
+	li $v0, 10
+	syscall
+
+division:
+	# Allocate the stack space
+	addi $sp, $sp, -20
+	sw $s0, 16($sp)
+	sw $s1, 12($sp)
+	sw $s2, 8($sp)
+	sw $s3, 4($sp)
+	sw $s4, 0($sp)
+	
+	# Load necessary values
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $0
+	
+	# Perform division loop
+	j divisionLoop
+	
+	divisionLoop:
+		# Stop divisionLoop if dividend cannot be subtracted anymore
+		slt $s3, $s0, $s1
+		bne $s3, $0, done
+		
+		# Dividend minus divisor
+		sub $s0, $s0, $s1
+		# Increment counter = quotient
+		addi $s2, $s2, 1 
+		
+		j divisionLoop
+		
+	done:
+		# Display answer
+		li $v0, 4
+		la $a0, promptOutput
+		syscall
+		move $a0, $s2
+		li $v0, 1
+		syscall
+		
+		# Deallocates the stack space
+		lw $s4, 0($sp)
+		lw $s3, 4($sp)
+		lw $s2, 8($sp)
+		lw $s1, 12($sp)
+		lw $s0, 16($sp)
+		addi $sp, $sp, 20
+		
+		# Return to main
+		j main
+
+.data
+line: .asciiz "\n --------------------------------------"
+newLine: .asciiz "\n"
+promptNodeNumber: .asciiz "\n Node No.: "
+promptAddrOfCurrentNode: .asciiz "\n Address of Current Node: "
+promptAddrOfNextNode: .asciiz	"\n Address of Next Node: "
+promptCurrentNode: .asciiz "\n Data Value of Current Node: "
+promptDuplicated: .asciiz "\nDuplicated linked list: "
+promptValues: .asciiz "Please enter a value:\n"
+promptSize: .asciiz "Please enter the size:\n"
+promptReverse: .asciiz "\nReverse Display of the linked list:\n"
+promptDisplay: .asciiz "\nDisplay of the linked list:\n"
+
+.text
+.globl main
+	
+main:
+	# ask prompt for values
+	li $v0, 4
+	la $a0, promptSize
+	syscall
+	
+	li $v0, 5
+	syscall
+
+	#create a linked list with 10 nodes
+	move	$a0, $v0	
+	jal	createLinkedList
+	
+	# Linked list is pointed by $v0
+	move	$a0, $v0	# Pass the linked list address in $a0
+	move	$t0, $v0 # Stores the list head in $t1 for later use
+	jal 	printLinkedList
+	
+	la	$a0, newLine
+	li	$v0, 4
+	syscall
+	la	$a0, promptReverse
+	li	$v0, 4
+	syscall
+	
+	# Display the linked list in reverse order
+	move	$a0, $t0 # Passes the list head to $a0
+	jal displayInReverse
+	
+	# Exit the program 
+	li	$v0, 10
+	syscall
+	
+createLinkedList:
+# $a0: No. of nodes to be created ($a0 >= 1)
+# $v0: returns list head
+	addi	$sp, $sp, -24
+	sw	$s0, 20($sp)
+	sw	$s1, 16($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 4($sp)
+	sw	$ra, 0($sp) 	# Save $ra just in case we may want to call a subprogram
+	
+	move	$s0, $a0	# $s0: no. of nodes to be created.
+	li	$s1, 1		# $s1: Node counter
+# Create the first node: header.
+# Each node is 8 bytes: link field then data field.
+	li	$a0, 8
+	li	$v0, 9
+	syscall
+	
+# OK now we have the list head. Save list head pointer 
+	move	$s2, $v0	# $s2 points to the first and last node of the linked list.
+	move	$s3, $v0	# $s3 now points to the list head.
+	
+	# ask prompt for values
+	li $v0, 4
+	la $a0, promptValues
+	syscall
+	
+	li $v0, 5
+	syscall
+	sw	$v0, 4($s2)	# Store the data value.
+	
+addNode:
+# Are we done?
+# No. of nodes created compared with the number of nodes to be created.
+	beq	$s1, $s0, finished
+	addi	$s1, $s1, 1	# Increment node counter.
+	li	$a0, 8 		# Remember: Node size is 8 bytes.
+	li	$v0, 9
+	syscall
+# Connect the this node to the lst node pointed by $s2.
+	sw	$v0, 0($s2)
+# Now make $s2 pointing to the newly created node.
+	move	$s2, $v0	# $s2 now points to the new node.
+	
+	# ask prompt for values
+	li $v0, 4
+	la $a0, promptValues
+	syscall
+	
+	li $v0, 5
+	syscall	
+	
+# sll: So that node 1 data value will be 4, node i data value will be 4*i
+	sw	$v0, 4($s2)	# Store the data value.
+	j	addNode
+	
+finished:
+# Make sure that the link field of the last node cotains 0.
+# The last node is pointed by $s2.
+	sw	$zero, 0($s2)
+	move	$v0, $s3	# Now $v0 points to the list head ($s3).
+	
+# Restore the register values
+	lw	$ra, 0($sp)
+	lw	$s4, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 16($sp)
+	lw	$s0, 20($sp)
+	addi	$sp, $sp, 24
+	
+	jr	$ra
+
+printLinkedList:
+# Save $s registers used
+	addi	$sp, $sp, -20
+	sw	$s0, 16($sp)
+	sw	$s1, 12($sp)
+	sw	$s2, 8($sp)
+	sw	$s3, 4($sp)
+	sw	$ra, 0($sp) 	# Save $ra just in case we may want to call a subprogram
+
+# $a0: points to the linked list.
+# $s0: Address of current
+# s1: Address of next
+# $2: Data of current
+# $s3: Node counter: 1, 2, ...
+	move $s0, $a0	# $s0: points to the current node.
+	li   $s3, 0
+	
+	li $v0, 4
+	la $a0, promptDisplay
+	syscall
+	
+printNextNode:
+	beq	$s0, $zero, printedAll
+	lw	$s1, 0($s0)
+	lw	$s2, 4($s0)
+	addi	$s3, $s3, 1
+
+# $s2: data field value of current node: print in decimal.		
+	move	$a0, $s2	# $s2: Data of current node
+	li	$v0, 1		
+	syscall
+	
+	# Print space
+	li $a0, 32
+	li $v0, 11
+	syscall
+
+# Now consider next node.
+	move	$s0, $s1	# Consider next node.
+	j	printNextNode
+	
+printedAll:
+# Restore the register values
+	lw	$ra, 0($sp)
+	lw	$s3, 4($sp)
+	lw	$s2, 8($sp)
+	lw	$s1, 12($sp)
+	lw	$s0, 16($sp)
+	addi	$sp, $sp, 20
+	jr	$ra
+	
+displayInReverse:
+	# Allocate the stack space
+	addi $sp, $sp, -12
+	sw $s0, 8($sp) 
+	sw $a0, 4($sp) 
+	sw $ra, 0($sp)
+	
+	bne $a0, $0, displayInReverseLoop # Check if head is equal to null or the list has reached the end
+	
+	# Deallocate the stack space
+	lw $ra, 0($sp) 
+	lw $a0, 4($sp) 
+	lw $s0, 8($sp) 
+	addi $sp, $sp, 12 
+
+	# Return
+	jr $ra 
+
+displayInReverseLoop:
+	# Go to next node
+	lw $a0, 0($a0) 
+	
+	# Recursive call
+	jal displayInReverse 
+	
+	# Print the node value
+	lw $a0, 4($sp) 
+	lw $a0, 4($a0) 
+	li $v0, 1
+	syscall
+	
+	# Print space
+	li $a0, 32
+	li $v0, 11
+	syscall
+	
+	# Deallocate the stack space
+	lw $ra, 0($sp)
+	lw $a0, 4($sp) 
+	lw $s0, 8($sp) 
+	addi $sp, $sp, 12 
+	
+	# Return
+	jr $ra
