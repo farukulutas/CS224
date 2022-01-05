@@ -25,8 +25,6 @@ void main() {
  TRISA = 0x00;  // portA is output to D
  TRISE = 0X00;  // portE is output to AN
 
-
-
  while(1)
  {
      // 250 times 4 *(1ms) for updating once per second
